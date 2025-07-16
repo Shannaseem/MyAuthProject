@@ -1,0 +1,554 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Account Access</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+      font-family: 'Inter', sans-serif;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    .bubbles {
+      position: fixed;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      z-index: 0;
+      top: 0; left: 0;
+      pointer-events: none;
+    }
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1976d2 0%, #2196f3 100%);
+      opacity: 0.13;
+      animation: float 14s infinite alternate cubic-bezier(.4,2,.6,1);
+      filter: blur(2.5px);
+      will-change: transform, opacity;
+    }
+    .bubble:nth-child(1) { width: 140px; height: 140px; left: 8%; top: 18%; animation-delay: 0s; }
+    .bubble:nth-child(2) { width: 90px; height: 90px; left: 78%; top: 48%; animation-delay: 4s; }
+    .bubble:nth-child(3) { width: 110px; height: 110px; left: 48%; top: 78%; animation-delay: 8s; }
+    .bubble:nth-child(4) { width: 60px; height: 60px; left: 60%; top: 10%; animation-delay: 2s; }
+    .bubble:nth-child(5) { width: 70px; height: 70px; left: 20%; top: 70%; animation-delay: 6s; }
+    @keyframes float {
+      0% { transform: translateY(0) scale(1) rotate(0deg); opacity: 0.13;}
+      30% { opacity: 0.18;}
+      50% { transform: translateY(-50px) scale(1.12) rotate(10deg); opacity: 0.22;}
+      70% { opacity: 0.18;}
+      100% { transform: translateY(0) scale(1) rotate(-5deg); opacity: 0.13;}
+    }
+    .auth-wrapper {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+      background: rgba(255,255,255,0.55);
+      border: 2px solid rgba(25, 118, 210, 0.18);
+      border-radius: 22px;
+      box-shadow: 0 8px 40px rgba(25, 118, 210, 0.18);
+      backdrop-filter: blur(18px);
+      padding: 0 0 32px 0;
+      margin-top: 40px;
+      animation: popIn 1s cubic-bezier(0.25, 1.5, 0.5, 1);
+      transition: box-shadow 0.3s;
+    }
+    .auth-wrapper:hover {
+      box-shadow: 0 16px 60px rgba(25, 118, 210, 0.28);
+    }
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.8);}
+      100% { opacity: 1; transform: scale(1);}
+    }
+    .auth-header {
+      width: 100%;
+      padding: 36px 30px 18px 30px;
+      border-radius: 22px 22px 0 0;
+      background: rgba(25, 118, 210, 0.09);
+      text-align: center;
+      border-bottom: 1px solid #bbdefb;
+      box-shadow: 0 2px 12px rgba(25, 118, 210, 0.04);
+    }
+    .auth-header h1 {
+      margin: 0 0 18px 0;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      background: linear-gradient(90deg, #1976d2, #2196f3, #42a5f5, #1976d2);
+      background-size: 200% 200%;
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 12px rgba(25, 118, 210, 0.13);
+      animation: gradientText 7s linear infinite;
+    }
+    @keyframes gradientText {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
+    }
+    .toggle-btns {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 0;
+    }
+    .toggle-btn {
+      flex: 1;
+      padding: 13px 0;
+      border: none;
+      border-radius: 8px 8px 0 0;
+      background: none;
+      color: #1976d2;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+      outline: none;
+      letter-spacing: 0.5px;
+      position: relative;
+      overflow: hidden;
+    }
+    .toggle-btn.active, .toggle-btn:focus, .toggle-btn:hover {
+      background: linear-gradient(90deg, #1976d2, #2196f3);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+    }
+    .toggle-btn:active::after {
+      content: '';
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 200%; height: 200%;
+      background: rgba(33,150,243,0.18);
+      border-radius: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      animation: ripple 0.5s linear;
+      z-index: 2;
+    }
+    @keyframes ripple {
+      to { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+    }
+    .form-area {
+      padding: 32px 30px 0 30px;
+      min-height: 350px;
+      transition: min-height 0.3s;
+    }
+    .auth-form {
+      width: 100%;
+      background: none;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      padding: 0;
+      animation: fadeIn 0.7s cubic-bezier(0.25, 1.5, 0.5, 1);
+      transition: opacity 0.3s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
+    .auth-form[aria-hidden="true"] {
+      opacity: 0;
+      pointer-events: none;
+      position: absolute;
+      left: -9999px;
+    }
+    .auth-form h2 {
+      margin-bottom: 25px;
+      font-size: 24px;
+      font-weight: 700;
+      background: linear-gradient(90deg, #1976d2, #2196f3);
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 10px rgba(25, 118, 210, 0.2);
+      text-align: center;
+    }
+    .input-group, .password-wrapper {
+      margin: 18px 0;
+      position: relative;
+    }
+    .auth-form input {
+      width: 100%;
+      padding: 15px;
+      border: 1.5px solid rgba(25, 118, 210, 0.22);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.5);
+      font-size: 15px;
+      transition: all 0.4s;
+      color: rgba(2, 10, 19, 0.92);
+      backdrop-filter: blur(10px);
+      outline: none;
+      font-weight: 500;
+    }
+    .auth-form input:focus {
+      border-color: #1976d2;
+      box-shadow: 0 0 14px rgba(25, 118, 210, 0.18);
+      transform: scale(1.02);
+    }
+    .password-wrapper #toggle-password-login,
+    .password-wrapper #toggle-password-signin {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 13px;
+      color: #1976d2;
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.3s;
+      font-weight: 600;
+      opacity: 0.8;
+    }
+    .password-wrapper #toggle-password-login:hover,
+    .password-wrapper #toggle-password-signin:hover {
+      text-decoration: underline;
+      color: #0d47a1;
+      opacity: 1;
+    }
+    .auth-form button {
+      width: 100%;
+      padding: 15px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(270deg, #1976d2, #2196f3, #1976d2);
+      background-size: 400% 400%;
+      color: #fff;
+      font-weight: 700;
+      font-size: 17px;
+      cursor: pointer;
+      box-shadow: 0 2px 12px rgba(25, 118, 210, 0.08);
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .auth-form button:active::after {
+      content: '';
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 200%; height: 200%;
+      background: rgba(33,150,243,0.18);
+      border-radius: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      animation: ripple 0.5s linear;
+      z-index: 2;
+    }
+    .auth-form button:hover {
+      animation: gradientShift 4s ease infinite;
+      transform: translateY(-3px) scale(1.04);
+      box-shadow: 0 12px 24px rgba(25, 118, 210, 0.18);
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .error-message, .error {
+      color: #d33;
+      background: #ffe6e6;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin: 8px 0;
+      display: none;
+      text-align: left;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+    .success-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: radial-gradient(circle, #e3f2fd, #bbdefb);
+      backdrop-filter: blur(10px);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.8s ease;
+    }
+    .success-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .success-content {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.5);
+      border: 2px solid rgba(25, 118, 210, 0.18);
+      border-radius: 20px;
+      padding: 50px 30px;
+      backdrop-filter: blur(15px);
+      box-shadow: 0 8px 40px rgba(25, 118, 210, 0.18);
+      animation: popIn 1s ease forwards;
+    }
+    .success-content h1 {
+      margin: 0;
+      font-size: 40px;
+      font-weight: 800;
+      background: linear-gradient(90deg, #1976d2, #2196f3);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 10px rgba(25, 118, 210, 0.18);
+      animation: pulse 2s infinite;
+    }
+    .success-content p {
+      margin-top: 10px;
+      font-size: 18px;
+      color: #333;
+      font-weight: 500;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    #confetti-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+    }
+    @media (max-width: 500px) {
+      .auth-wrapper { max-width: 98vw; padding: 0 0 20px 0;}
+      .auth-header { padding: 24px 10px 12px 10px;}
+      .form-area { padding: 20px 10px 0 10px;}
+      .success-content { padding: 30px 10px;}
+    }
+    /* Focus ring for accessibility */
+    .auth-form input:focus, .toggle-btn:focus, .auth-form button:focus {
+      outline: 2px solid #1976d2;
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bubbles" aria-hidden="true">
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+  </div>
+  <div class="auth-wrapper" role="main" aria-label="Account Access">
+    <div class="auth-header">
+      <h1>Account Access</h1>
+      <div class="toggle-btns" role="tablist">
+        <button class="toggle-btn" id="show-signin" role="tab" aria-selected="true" tabindex="0">Sign Up</button>
+        <button class="toggle-btn" id="show-login" role="tab" aria-selected="false" tabindex="0">Login</button>
+      </div>
+    </div>
+    <div class="form-area">
+      <!-- Sign Up Form (default visible) -->
+      <form class="auth-form" id="signin-form" aria-hidden="false" autocomplete="off">
+        <h2>Sign Up</h2>
+        <div id="signin-error" class="error" aria-live="polite"></div>
+        <div class="input-group">
+          <input type="email" id="signin-email" placeholder="Email" autocomplete="username" aria-label="Email" required />
+        </div>
+        <div class="input-group">
+          <input type="text" id="signin-username" placeholder="Username" autocomplete="username" aria-label="Username" required />
+        </div>
+        <div class="input-group password-wrapper">
+          <input type="password" id="signin-password" placeholder="Password" autocomplete="new-password" aria-label="Password" required />
+          <span id="toggle-password-signin" tabindex="0" aria-label="Show password" role="button">Show</span>
+        </div>
+        <button type="button" id="signin-btn">Sign Up</button>
+      </form>
+      <!-- Login Form (hidden by default) -->
+      <form class="auth-form" id="login-form" style="display:none;" aria-hidden="true" autocomplete="off">
+        <h2>Login</h2>
+        <div id="login-error" class="error" aria-live="polite"></div>
+        <div class="input-group">
+          <input type="text" id="login-email" placeholder="Email" autocomplete="username" aria-label="Email" required>
+        </div>
+        <div class="input-group password-wrapper">
+          <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" aria-label="Password" required>
+          <span id="toggle-password-login" tabindex="0" aria-label="Show password" role="button">Show</span>
+        </div>
+        <button type="button" id="login-btn">Login</button>
+      </form>
+    </div>
+  </div>
+  <div class="success-overlay" id="success-overlay" aria-modal="true" role="dialog">
+    <canvas id="confetti-canvas"></canvas>
+    <div class="success-content" id="success-content">
+      <h1>🎉 Success! ✨</h1>
+      <p id="success-message">Welcome!</p>
+    </div>
+  </div>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js"></script>
+<script>
+  // Toggle logic
+  const showSigninBtn = document.getElementById('show-signin');
+  const showLoginBtn = document.getElementById('show-login');
+  const signinForm = document.getElementById('signin-form');
+  const loginForm = document.getElementById('login-form');
+
+  // Utility: Clear all fields in a form
+  function clearForm(form) {
+    Array.from(form.querySelectorAll('input')).forEach(input => input.value = '');
+    Array.from(form.querySelectorAll('.error, .error-message')).forEach(div => {
+      div.textContent = '';
+      div.style.display = 'none';
+    });
+  }
+
+  // Show Sign Up (Sign In) Form
+  function showSignUpForm() {
+    showSigninBtn.classList.add('active');
+    showLoginBtn.classList.remove('active');
+    showSigninBtn.setAttribute('aria-selected', 'true');
+    showLoginBtn.setAttribute('aria-selected', 'false');
+    signinForm.style.display = '';
+    loginForm.style.display = 'none';
+    signinForm.setAttribute('aria-hidden', 'false');
+    loginForm.setAttribute('aria-hidden', 'true');
+    clearForm(signinForm);
+    signinForm.querySelector('input').focus();
+  }
+
+  // Show Login Form
+  function showLoginForm() {
+    showLoginBtn.classList.add('active');
+    showSigninBtn.classList.remove('active');
+    showLoginBtn.setAttribute('aria-selected', 'true');
+    showSigninBtn.setAttribute('aria-selected', 'false');
+    loginForm.style.display = '';
+    signinForm.style.display = 'none';
+    loginForm.setAttribute('aria-hidden', 'false');
+    signinForm.setAttribute('aria-hidden', 'true');
+    clearForm(loginForm);
+    loginForm.querySelector('input').focus();
+  }
+
+  // Default: Show Sign Up
+  showSignUpForm();
+
+  showSigninBtn.onclick = showSignUpForm;
+  showLoginBtn.onclick = showLoginForm;
+
+  // Keyboard accessibility for toggle buttons
+  showSigninBtn.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') showSignUpForm(); };
+  showLoginBtn.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') showLoginForm(); };
+
+  // Password show/hide
+  function togglePassword(inputId, toggleId) {
+    const pwd = document.getElementById(inputId);
+    const toggle = document.getElementById(toggleId);
+    toggle.onclick = function() {
+      if (pwd.type === 'password') {
+        pwd.type = 'text'; this.textContent = 'Hide';
+      } else {
+        pwd.type = 'password'; this.textContent = 'Show';
+      }
+    };
+    toggle.onkeydown = function(e) {
+      if (e.key === 'Enter' || e.key === ' ') this.click();
+    };
+  }
+  togglePassword('login-password', 'toggle-password-login');
+  togglePassword('signin-password', 'toggle-password-signin');
+
+  // Success Overlay
+  function showSuccess(title, msg, callback) {
+    document.getElementById('success-content').querySelector('h1').innerHTML = title;
+    document.getElementById('success-message').innerHTML = msg;
+    const overlay = document.getElementById('success-overlay');
+    overlay.classList.add('active');
+    const confettiCanvas = document.getElementById('confetti-canvas');
+    const myConfetti = confetti.create(confettiCanvas, { resize: true, useWorker: true });
+    myConfetti({
+      particleCount: 220,
+      spread: 200,
+      origin: { y: 0.6 },
+      colors: ['#1976d2', '#2196f3', '#42a5f5', '#fff176', '#ff8a65', '#ab47bc']
+    });
+    setTimeout(() => {
+      overlay.classList.remove('active');
+      if (typeof callback === 'function') callback();
+    }, 2200);
+  }
+
+  // Login Form Validation & Submit
+  document.getElementById('login-btn').onclick = async function() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value.trim();
+    const errorDiv = document.getElementById('login-error');
+    errorDiv.style.display = 'none';
+    let errors = [];
+    if (!/^[A-Za-z][A-Za-z0-9._%+-]*@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email)) errors.push('Invalid email.');
+    if (!/^[A-Za-z0-9]{8,40}$/.test(password)) errors.push('Password must be 8–40 letters/numbers.');
+    if (errors.length) {
+      errorDiv.innerHTML = errors.join('<br>'); errorDiv.style.display = 'block'; return;
+    }
+    try {
+      const response = await fetch('http://127.0.0.1:8000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      if (response.ok) {
+        showSuccess(
+          '🎉 Welcome Back! You’re All Set ✨',
+          'Great to see you again. Let’s get started!',
+          () => { showSignUpForm(); }
+        );
+      } else {
+        const data = await response.json();
+        errorDiv.innerHTML = data.detail || 'Login failed.'; errorDiv.style.display = 'block';
+      }
+    } catch (err) {
+      errorDiv.innerHTML = 'Server error. Please try again.'; errorDiv.style.display = 'block';
+    }
+  };
+
+  // Sign Up (Sign In) Form Validation & Submit
+  document.getElementById('signin-btn').onclick = async function() {
+    const email = document.getElementById('signin-email').value.trim();
+    const username = document.getElementById('signin-username').value.trim();
+    const password = document.getElementById('signin-password').value.trim();
+    const errorDiv = document.getElementById('signin-error');
+    errorDiv.style.display = 'none';
+    let errors = [];
+    if (!/^[A-Za-z][A-Za-z0-9._%+-]*@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email)) errors.push('Invalid email.');
+    if (!/^[A-Za-z_][A-Za-z0-9_.]*$/.test(username) || username.includes(' ') || username.includes('__') || username.endsWith('_') || username.endsWith('.')) errors.push('Invalid username.');
+    if (!/^[A-Za-z0-9]{8,40}$/.test(password)) errors.push('Password must be 8–40 letters/numbers.');
+    if (errors.length) {
+      errorDiv.innerHTML = errors.join('<br>'); errorDiv.style.display = 'block'; return;
+    }
+    try {
+      const response = await fetch('http://127.0.0.1:8000/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, username, password })
+      });
+      if (response.ok) {
+        showSuccess(
+          '🎉 Welcome! You’re Signed In ✨',
+          'Your account was created successfully.',
+          () => { showLoginForm(); }
+        );
+      } else {
+        const data = await response.json();
+        errorDiv.innerHTML = data.detail || 'Signup failed.'; errorDiv.style.display = 'block';
+      }
+    } catch (err) {
+      errorDiv.innerHTML = 'Server error. Please try again.'; errorDiv.style.display = 'block';
+    }
+  };
+</script>
+</body>
+</html>
